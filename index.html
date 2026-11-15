@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beyond Earth - 3D Survival</title>
+    <title>Beyond Earth - Junior Astronaut Mission Trainer</title>
     <link rel="stylesheet" href="style.css">
     <script type="importmap">
       { "imports": { "three": "https://esm.sh/three@0.160.0" } }
@@ -11,54 +11,90 @@
 </head>
 <body>
 
-    <!-- LOADING SCREEN -->
-    <div id="loading-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b132b; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999; color: white; font-family: 'Courier New', monospace;">
-        <h1 style="color: #5bc0be;">BEYOND EARTH</h1>
-        <p id="loading-text">Connecting to NASA DONKI API...</p>
+    <!-- LOADING & BRIEFING SCREEN -->
+    <div id="loading-screen">
+        <div class="briefing-card">
+            <h1 class="game-title">🚀 BEYOND EARTH</h1>
+            <p class="subtitle">Junior Astronaut Mission Trainer</p>
+            <p id="loading-text">Connecting to NASA DONKI API...</p>
+
+            <div id="briefing-controls" style="display: none;">
+                <div class="controls-guide">
+                    <div><strong>WASD / Arrows:</strong> Walk</div>
+                    <div><strong>SHIFT / SPACE:</strong> Jetpack Boost (-O₂)</div>
+                    <div><strong>E Key:</strong> Toggle / Repair Modules</div>
+                </div>
+
+                <div class="difficulty-select">
+                    <span>Select Rank:</span>
+                    <div class="diff-buttons">
+                        <button class="diff-btn active" data-diff="cadet">Cadet (60s)</button>
+                        <button class="diff-btn" data-diff="commander">Commander (90s)</button>
+                        <button class="diff-btn" data-diff="veteran">Veteran (120s)</button>
+                    </div>
+                </div>
+
+                <button id="start-btn" class="btn-start">Launch Mission</button>
+            </div>
+        </div>
     </div>
 
     <div id="damage-flash"></div>
 
     <div id="warning-overlay">
-        <p class="warning-sub">SOLAR FLARE INBOUND!</p>
+        <p class="warning-sub" id="warning-title">SOLAR FLARE INBOUND!</p>
         <p id="countdown-text">5</p>
-        <p class="warning-sub">RUN TO SHIELD!</p>
+        <p class="warning-sub">ACTIVATE SHIELD GENERATORS!</p>
     </div>
 
     <div id="ui-layer">
-        <div class="top-bar">
-            <div class="stat">POWER <div class="bar-bg"><div class="bar" id="power-bar"></div></div> <span id="power-val">100%</span></div>
-            <div class="stat">OXYGEN <div class="bar-bg"><div class="bar" id="oxygen-bar"></div></div> <span id="oxygen-val">100%</span></div>
-            <div class="stat">HEALTH <div class="bar-bg"><div class="bar" id="health-bar"></div></div> <span id="health-val">100%</span></div>
-            <div class="stat" style="color: #ffd700; margin-left: 20px;">MISSION TIME: <span id="time-val">90</span>s</div>
+        <div class="top-row">
+            <div class="top-bar">
+                <div class="stat">POWER <div class="bar-bg"><div class="bar" id="power-bar"></div></div> <span id="power-val">100%</span></div>
+                <div class="stat">OXYGEN <div class="bar-bg"><div class="bar" id="oxygen-bar"></div></div> <span id="oxygen-val">100%</span></div>
+                <div class="stat">HEALTH <div class="bar-bg"><div class="bar" id="health-bar"></div></div> <span id="health-val">100%</span></div>
+                <div class="stat timer-stat">TIME: <span id="time-val">90</span>s</div>
+                <button id="mute-btn" class="hud-btn" title="Toggle Sound">🔊 SFX</button>
+            </div>
+        </div>
+
+        <div id="systems-panel">
+            <h3>OUTPOST SYSTEMS</h3>
+            <div class="sys-row"><span>☀️ Solar Array</span> <strong id="sys-solar" class="status-on">ONLINE</strong></div>
+            <div class="sys-row"><span>🫧 O₂ Recycler</span> <strong id="sys-o2" class="status-off">OFFLINE</strong></div>
+            <div class="sys-row"><span>🛡️ Rad Shields</span> <strong id="sys-shield" class="status-off">OFFLINE</strong></div>
+            <div class="sys-hint"> WASD: Move | SPACE: Boost | E: Use/Fix</div>
         </div>
 
         <div id="log-box">
             <h3>MISSION LOG</h3>
             <div id="log-content"></div>
         </div>
+
         <div id="interact-prompt">Press E to Interact</div>
     </div>
 
     <!-- REAL NASA DATA DISPLAY -->
-    <div style="position: absolute; bottom: 20px; left: 20px; color: #5bc0be; font-size: 14px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 5px; border: 1px solid #5bc0be; pointer-events: auto; z-index: 50;">
+    <div id="nasa-telemetry">
         <strong>NASA DONKI API:</strong> <span id="api-status">Connecting...</span><br>
         <strong>Real Solar Flare Data:</strong> <span id="real-flare-data">Fetching...</span>
     </div>
 
     <div id="alert-screen">
         <div class="alert-box">
-            <h1>⚠️ SOLAR FLARE IMPACT</h1>
+            <h1 id="alert-heading">⚠️ SOLAR FLARE IMPACT</h1>
             <p id="alert-desc">NASA's DONKI database indicates a Coronal Mass Ejection.</p>
-            <p><span>Astronaut Health (OSDR Data):</span> Unshielded exposure to this radiation increases long-term cancer risk.</p>
+            <p><span>Astronaut Health (OSDR Data):</span> Unshielded exposure to solar particle radiation damages cells and equipment. Keep shields powered during the storm!</p>
             <button class="btn-action" onclick="closeAlert()">Acknowledge & Act</button>
         </div>
     </div>
 
     <div id="end-screen">
-        <h1 id="end-title">MISSION FAILED</h1>
-        <p id="end-desc"></p>
-        <button class="restart-btn" onclick="location.reload()">Try Again</button>
+        <div class="end-card">
+            <h1 id="end-title">MISSION FAILED</h1>
+            <div id="end-desc"></div>
+            <button class="restart-btn" onclick="location.reload()">Play Again</button>
+        </div>
     </div>
 
     <script type="module" src="game.js"></script>
